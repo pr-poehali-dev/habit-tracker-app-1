@@ -96,17 +96,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8 animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">Цепочка Привычек</h1>
-              <p className="text-gray-600">Формируйте полезные привычки каждый день</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        <header className="mb-6 md:mb-8 animate-fade-in">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-1">Цепочка Привычек</h1>
+              <p className="text-sm md:text-base text-gray-600">Формируйте полезные привычки каждый день</p>
             </div>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="rounded-full h-14 w-14 shadow-lg hover-scale">
+                <Button size="lg" className="rounded-full h-12 w-12 md:h-14 md:w-14 shadow-lg hover-scale flex-shrink-0">
                   <Icon name="Plus" size={24} />
                 </Button>
               </DialogTrigger>
@@ -167,21 +167,21 @@ const Index = () => {
             </Dialog>
           </div>
 
-          <Card className="p-6 bg-white/80 backdrop-blur-sm shadow-lg">
-            <div className="grid grid-cols-3 gap-4 text-center">
+          <Card className="p-4 md:p-6 bg-white/80 backdrop-blur-sm shadow-lg">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
               <div>
-                <div className="text-3xl font-bold text-purple-600">{calculateSuccessRate()}%</div>
-                <div className="text-sm text-gray-600">Успех за месяц</div>
+                <div className="text-2xl md:text-3xl font-bold text-purple-600">{calculateSuccessRate()}%</div>
+                <div className="text-xs md:text-sm text-gray-600">Успех</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-2xl md:text-3xl font-bold text-green-600">
                   {habits.reduce((max, h) => Math.max(max, calculateStreak(h.completedDays)), 0)}
                 </div>
-                <div className="text-sm text-gray-600">Лучшая серия</div>
+                <div className="text-xs md:text-sm text-gray-600">Серия</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-blue-600">{habits.length}</div>
-                <div className="text-sm text-gray-600">Привычек</div>
+                <div className="text-2xl md:text-3xl font-bold text-blue-600">{habits.length}</div>
+                <div className="text-xs md:text-sm text-gray-600">Привычек</div>
               </div>
             </div>
           </Card>
@@ -191,21 +191,21 @@ const Index = () => {
           {habits.map((habit, index) => (
             <Card
               key={habit.id}
-              className="p-6 bg-white/90 backdrop-blur-sm shadow-md hover:shadow-xl transition-shadow animate-fade-in"
+              className="p-4 md:p-6 bg-white/90 backdrop-blur-sm shadow-md hover:shadow-xl transition-shadow animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="flex items-start gap-4 mb-4">
+              <div className="flex items-start gap-3 md:gap-4 mb-4">
                 <div
-                  className="p-3 rounded-xl flex-shrink-0"
+                  className="p-2 md:p-3 rounded-xl flex-shrink-0"
                   style={{ backgroundColor: habit.color }}
                 >
-                  <Icon name={habit.icon} size={28} className="text-gray-700" />
+                  <Icon name={habit.icon} size={24} className="text-gray-700" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-1">{habit.name}</h3>
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-1 truncate">{habit.name}</h3>
+                  <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
                     <span className="flex items-center gap-1">
-                      <Icon name="Flame" size={16} className="text-orange-500" />
+                      <Icon name="Flame" size={14} className="text-orange-500" />
                       {calculateStreak(habit.completedDays)} дней
                     </span>
                     <span>
@@ -213,33 +213,33 @@ const Index = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 md:gap-2 flex-shrink-0">
                   <Button
-                    size="lg"
+                    size="sm"
                     variant={habit.completedDays.has(currentDay) ? 'default' : 'outline'}
-                    className={`rounded-full h-12 w-12 transition-all ${
+                    className={`rounded-full h-10 w-10 md:h-12 md:w-12 transition-all ${
                       habit.completedDays.has(currentDay) ? 'animate-scale-in' : 'hover-scale'
                     }`}
                     onClick={() => toggleDay(habit.id, currentDay)}
                   >
                     {habit.completedDays.has(currentDay) ? (
-                      <Icon name="Check" size={24} />
+                      <Icon name="Check" size={20} />
                     ) : (
-                      <Icon name="Plus" size={24} />
+                      <Icon name="Plus" size={20} />
                     )}
                   </Button>
                   <Button
-                    size="lg"
+                    size="sm"
                     variant="ghost"
-                    className="rounded-full h-12 w-12 hover-scale text-gray-400 hover:text-red-500"
+                    className="rounded-full h-10 w-10 md:h-12 md:w-12 hover-scale text-gray-400 hover:text-red-500"
                     onClick={() => deleteHabit(habit.id)}
                   >
-                    <Icon name="Trash2" size={20} />
+                    <Icon name="Trash2" size={16} />
                   </Button>
                 </div>
               </div>
 
-              <div className="flex gap-1 flex-wrap">
+              <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-15 gap-1">
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                   const isCompleted = habit.completedDays.has(day);
                   const isCurrent = day === currentDay;
@@ -250,7 +250,7 @@ const Index = () => {
                       key={day}
                       onClick={() => !isFuture && toggleDay(habit.id, day)}
                       disabled={isFuture}
-                      className={`h-8 w-8 rounded-lg text-xs font-medium transition-all ${
+                      className={`aspect-square rounded-lg text-xs font-medium transition-all flex items-center justify-center ${
                         isCompleted
                           ? 'scale-105 shadow-sm'
                           : isCurrent
@@ -265,7 +265,7 @@ const Index = () => {
                         color: isCompleted ? '#374151' : '#9ca3af',
                       }}
                     >
-                      {isCompleted && <Icon name="Check" size={14} className="mx-auto" />}
+                      {isCompleted && <Icon name="Check" size={12} className="mx-auto" />}
                     </button>
                   );
                 })}
