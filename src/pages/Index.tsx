@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,37 +11,75 @@ interface Habit {
   name: string;
   icon: string;
   color: string;
-  completedDays: Set<number>;
+  completedDates: string[];
 }
 
 const ICON_OPTIONS = ['Droplets', 'Dumbbell', 'Book', 'Moon', 'Coffee', 'Footprints', 'Apple', 'Smile'];
 const COLOR_OPTIONS = ['#F2FCE2', '#E5DEFF', '#FDE1D3', '#D3E4FD', '#FFDEE2', '#FEF7CD', '#FEC6A1'];
+const STORAGE_KEY = 'habit_tracker_data';
+
+const formatDate = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
+const getTodayString = (): string => {
+  return formatDate(new Date());
+};
+
+const getLast14Days = (): string[] => {
+  const days: string[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    days.push(formatDate(date));
+  }
+  return days;
+};
 
 const Index = () => {
-  const [habits, setHabits] = useState<Habit[]>([
-    { id: '1', name: 'Пить воду', icon: 'Droplets', color: '#D3E4FD', completedDays: new Set([1, 2, 3, 5, 6]) },
-    { id: '2', name: 'Зарядка', icon: 'Dumbbell', color: '#F2FCE2', completedDays: new Set([1, 2, 4, 5]) },
-    { id: '3', name: 'Читать книгу', icon: 'Book', color: '#E5DEFF', completedDays: new Set([1, 3, 4, 6]) },
-  ]);
-
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('Droplets');
   const [selectedColor, setSelectedColor] = useState('#D3E4FD');
 
-  const currentDay = new Date().getDate();
-  const daysInMonth = 30;
+  const today = getTodayString();
+  const last14Days = getLast14Days();
 
-  const toggleDay = (habitId: string, day: number) => {
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setHabits(parsed);
+      } catch (e) {
+        console.error('Failed to load habits:', e);
+      }
+    } else {
+      const demoHabits: Habit[] = [
+        { id: '1', name: 'Пить воду', icon: 'Droplets', color: '#D3E4FD', completedDates: [last14Days[10], last14Days[11], last14Days[12], last14Days[13]] },
+        { id: '2', name: 'Зарядка', icon: 'Dumbbell', color: '#F2FCE2', completedDates: [last14Days[11], last14Days[12], last14Days[13]] },
+        { id: '3', name: 'Читать книгу', icon: 'Book', color: '#E5DEFF', completedDates: [last14Days[12], last14Days[13]] },
+      ];
+      setHabits(demoHabits);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(demoHabits));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (habits.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+    }
+  }, [habits]);
+
+  const toggleDate = (habitId: string, dateString: string) => {
     setHabits(habits.map(habit => {
       if (habit.id === habitId) {
-        const newCompletedDays = new Set(habit.completedDays);
-        if (newCompletedDays.has(day)) {
-          newCompletedDays.delete(day);
-        } else {
-          newCompletedDays.add(day);
-        }
-        return { ...habit, completedDays: newCompletedDays };
+        const isCompleted = habit.completedDates.includes(dateString);
+        const newCompletedDates = isCompleted
+          ? habit.completedDates.filter(d => d !== dateString)
+          : [...habit.completedDates, dateString];
+        return { ...habit, completedDates: newCompletedDates };
       }
       return habit;
     }));
@@ -55,7 +93,7 @@ const Index = () => {
       name: newHabitName,
       icon: selectedIcon,
       color: selectedColor,
-      completedDays: new Set(),
+      completedDates: [],
     };
     
     setHabits([...habits, newHabit]);
@@ -69,15 +107,19 @@ const Index = () => {
     setHabits(habits.filter(h => h.id !== habitId));
   };
 
-  const calculateStreak = (completedDays: Set<number>) => {
-    const sortedDays = Array.from(completedDays).sort((a, b) => b - a);
-    let streak = 0;
-    let expectedDay = currentDay;
+  const calculateStreak = (completedDates: string[]) => {
+    if (completedDates.length === 0) return 0;
     
-    for (const day of sortedDays) {
-      if (day === expectedDay || day === expectedDay - 1) {
+    const sortedDates = [...completedDates].sort().reverse();
+    let streak = 0;
+    const currentDate = new Date();
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+      const expectedDate = formatDate(currentDate);
+      
+      if (sortedDates[i] === expectedDate) {
         streak++;
-        expectedDay = day - 1;
+        currentDate.setDate(currentDate.getDate() - 1);
       } else {
         break;
       }
@@ -88,9 +130,9 @@ const Index = () => {
 
   const calculateSuccessRate = () => {
     if (habits.length === 0) return 0;
-    const totalPossible = habits.length * currentDay;
+    const totalPossible = habits.length * 14;
     const totalCompleted = habits.reduce((sum, habit) => {
-      return sum + Array.from(habit.completedDays).filter(day => day <= currentDay).length;
+      return sum + habit.completedDates.filter(d => last14Days.includes(d)).length;
     }, 0);
     return Math.round((totalCompleted / totalPossible) * 100);
   };
@@ -175,7 +217,7 @@ const Index = () => {
               </div>
               <div>
                 <div className="text-2xl md:text-3xl font-bold text-green-600">
-                  {habits.reduce((max, h) => Math.max(max, calculateStreak(h.completedDays)), 0)}
+                  {habits.reduce((max, h) => Math.max(max, calculateStreak(h.completedDates)), 0)}
                 </div>
                 <div className="text-xs md:text-sm text-gray-600">Серия</div>
               </div>
@@ -206,23 +248,23 @@ const Index = () => {
                   <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       <Icon name="Flame" size={14} className="text-orange-500" />
-                      {calculateStreak(habit.completedDays)} дней
+                      {calculateStreak(habit.completedDates)} дней
                     </span>
                     <span>
-                      {habit.completedDays.size}/{daysInMonth}
+                      {habit.completedDates.filter(d => last14Days.includes(d)).length}/14
                     </span>
                   </div>
                 </div>
                 <div className="flex gap-1 md:gap-2 flex-shrink-0">
                   <Button
                     size="sm"
-                    variant={habit.completedDays.has(currentDay) ? 'default' : 'outline'}
+                    variant={habit.completedDates.includes(today) ? 'default' : 'outline'}
                     className={`rounded-full h-10 w-10 md:h-12 md:w-12 transition-all ${
-                      habit.completedDays.has(currentDay) ? 'animate-scale-in' : 'hover-scale'
+                      habit.completedDates.includes(today) ? 'animate-scale-in' : 'hover-scale'
                     }`}
-                    onClick={() => toggleDay(habit.id, currentDay)}
+                    onClick={() => toggleDate(habit.id, today)}
                   >
-                    {habit.completedDays.has(currentDay) ? (
+                    {habit.completedDates.includes(today) ? (
                       <Icon name="Check" size={20} />
                     ) : (
                       <Icon name="Plus" size={20} />
@@ -239,24 +281,22 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-15 gap-1">
-                {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                  const isCompleted = habit.completedDays.has(day);
-                  const isCurrent = day === currentDay;
-                  const isFuture = day > currentDay;
+              <div className="grid grid-cols-7 sm:grid-cols-14 gap-1">
+                {last14Days.map((dateString, idx) => {
+                  const isCompleted = habit.completedDates.includes(dateString);
+                  const isCurrent = dateString === today;
+                  const date = new Date(dateString);
+                  const dayNum = date.getDate();
 
                   return (
                     <button
-                      key={day}
-                      onClick={() => !isFuture && toggleDay(habit.id, day)}
-                      disabled={isFuture}
-                      className={`aspect-square rounded-lg text-xs font-medium transition-all flex items-center justify-center ${
+                      key={dateString}
+                      onClick={() => toggleDate(habit.id, dateString)}
+                      className={`aspect-square rounded-lg text-xs font-medium transition-all flex flex-col items-center justify-center ${
                         isCompleted
                           ? 'scale-105 shadow-sm'
                           : isCurrent
                           ? 'border-2 border-purple-400'
-                          : isFuture
-                          ? 'opacity-30 cursor-not-allowed'
                           : 'hover-scale opacity-60 hover:opacity-100'
                       }`}
                       style={{
@@ -265,7 +305,7 @@ const Index = () => {
                         color: isCompleted ? '#374151' : '#9ca3af',
                       }}
                     >
-                      {isCompleted && <Icon name="Check" size={12} className="mx-auto" />}
+                      {isCompleted ? <Icon name="Check" size={12} className="mx-auto" /> : <span className="text-[10px]">{dayNum}</span>}
                     </button>
                   );
                 })}
